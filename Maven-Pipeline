@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'M3'  // ✅ Maven tool configured in Jenkins as 'M3'
+    }
+
+    environment {
+        // 🌐 Artifactory details
+        ARTIFACTORY_URL = 'https://trialppwzho.jfrog.io'
+        ARTIFACTORY_REPO = 'mymaven'  // 🏷️ Target Artifactory repo (generic or Maven)
+        ARTIFACTORY_CREDENTIAL_ID = 'jfrog-creds'
+    }
+
+    stages {
+
+        stage('Clean Workspace') {
+            steps {
+                echo '🧹 Cleaning workspace...'
+                cleanWs()
+            }
+        }
+
+        stage('Clone Sample Maven Project') {
+            steps {
+                echo "📥 Cloning sample Maven app"
+                git branch: 'master',
+                    url: 'https://github.com/SiddeshIM866/maven-web-app.git',
+                    credentialsId: 'git-creds'
+            }
+        }
+
+        stage('Build with Maven') {
+            steps {
+                echo '🔧 Running Maven build'
+                sh 'mvn clean install'
+            }
+        }
+
+        stage('Push to JFrog Artifactory') {
+            steps {
+                echo '🚀 Uploading JAR to JFrog Artifactory'
+                withCredentials([usernamePassword(
+                    credentialsId: "${ARTIFACTORY_CREDENTIAL_ID}",
+                    usernameVariable: 'JFROG_USER',
+                    passwordVariable: 'JFROG_PASSWORD'
+                )]) {
+                    sh '''
+                        echo "🔍 Searching for built JAR..."
+                        FILE=$(find target -name "*.jar" | head -n 1)
+
+                        echo "📤 Uploading $FILE to Artifactory"
+                        curl -u $JFROG_USER:$JFROG_PASSWORD -T "$FILE" \
+                        "$ARTIFACTORY_URL/artifactory/$ARTIFACTORY_REPO/$(basename $FILE)"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build and artifact upload completed successfully!'
+        }
+        failure {
+            echo '❌ Build or push failed. Check logs above.'
+        }
+    }
+}
