@@ -1,0 +1,6 @@
+echo -e "FROM alpine\nCMD echo 'This is image 1'" > image1/Dockerfile
+echo -e "FROM alpine\nCMD echo 'This is image 2'" > image2/Dockerfile
+echo -e "FROM alpine\nCMD echo 'This is image 3'" > image3/Dockerfile
+echo -e "FROM alpine\nCMD echo 'This is image 4'" > image4/Dockerfile
+echo -e "FROM alpine\nCMD echo 'This is image 5'" > image5/Dockerfile
+
